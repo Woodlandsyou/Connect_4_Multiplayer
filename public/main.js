@@ -17,8 +17,6 @@
             canvas = p.createCanvas(_width, _height).canvas;
             canvas.addEventListener("click", e => {
                 const x = Math.floor(p.mouseX / s);
-                // grid[x].push(current);
-                // current = !current;
                 socket.emit("turn", x);
             });
         }
@@ -53,8 +51,13 @@
             }
         }
         
-        await socket.on("answer",({x, current}) => {
-            if(x !== undefined && typeof current === "boolean") console.log(x, current);
+        await socket.on("answer", data => {
+            const { x, player } = data;
+            if(typeof x !== "number" && typeof player !== "boolean") throw new Error(`Invalid Server Response: ${data}`);
+            if(player !== current) throw new Error(`Game is out of Sync\nplayer-Side: ${current}\nServer_Side: ${player}`);
+            
+            grid[x].push(player);
+            current = !player;
         });
         
     }

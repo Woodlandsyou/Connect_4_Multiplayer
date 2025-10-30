@@ -68,7 +68,7 @@ function updateTurn(x) {
     const count = checkForWin(x);
     if(count >= 4) {return `${player ? "Yellow":"Red"} has won`;}
     player = !player;
-    return {x: x, current: player};
+    return {x: x, player: player};
 }
 
 module.exports = { updateTurn }
