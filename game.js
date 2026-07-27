@@ -1,9 +1,11 @@
 const cols = 7;
-let grid = (() => {
-    let a = [];
-    for (let i = 0; i < cols; i++) a.push([]);
-    return a;
-})();
+// let grid = (() => {
+//     let a = [];
+//     for (let i = 0; i < cols; i++) a.push([]);
+//     return a;
+// })();
+let grid = new Array(cols).fill([])
+console.log(grid)
 let player = false;
 
 function checkForWin(i) {
