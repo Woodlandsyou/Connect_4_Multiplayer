@@ -1,8 +1,8 @@
 class Game {
-  constructor() {
+  constructor(startPlayer = 0) {
     this.cols = 7;
-    this.grid = Array.from({ length: 7 }, () => [])
-    this.player = false;
+    this.grid = Array.from({ length: this.cols }, () => [])
+    this.player = startPlayer;
   }
 
   checkForWin(i) {
@@ -58,9 +58,9 @@ class Game {
   update(x) {
     this.grid[x].push(this.player)
     const count = this.checkForWin(x);
-    if (count >= 4) { return `${this.player ? "Yellow" : "Red"} has won`; }
-    this.player = !this.player;
-    return { x: x, player: this.player };
+    if (count >= 4) { return this.player ? "Red" : "Yellow"; }
+    this.player = this.player ? 0 : 1;
+    return undefined;
   }
 
   checkNeighbour(i, j, current) {

@@ -18,11 +18,10 @@ function copyCode() {
 
 
 const socket = io("http://localhost:8080");
-const playerID = localStorage.getItem("playerID");
+const playerID = sessionStorage.getItem("playerID");
 
 socket.emit("join-Room", window.location.pathname.split("/").at(-2), playerID);
 
 socket.on("start", roomID => {
-  console.log(roomID);
   window.location.href = `/lobby/${roomID}`
 })

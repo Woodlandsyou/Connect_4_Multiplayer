@@ -53,13 +53,22 @@ app.post("/api/join/:roomID", (req, res) => {
   }
 });
 
+app.get("/api/board/:roomID", (req, res) => {
+  const lobby = lobbies.get(req.params.roomID);
+  if (lobby && lobby.players.includes(req.get("Authorization").slice(7))) {
+    res.status(200).json({ grid: lobby.game.grid, current: lobby.game.player })
+  } else {
+    res.status(401);
+  }
+});
+
 app.get("/lobby/:roomID/waiting", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "waiting.html"));
 });
 
-app.get("lobby/:roomID", (req, res) => {
+app.get("/lobby/:roomID", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "index.html"));
-})
+});
 
 io.on("connection", socket => {
 
@@ -68,6 +77,16 @@ io.on("connection", socket => {
     if (lobby.players.includes(playerID)) {
       socket.join(roomID);
       if (lobby.players.length === 2) io.to(roomID).emit("start", roomID);
+    }
+  });
+
+  socket.on("turn", (playerID, x) => {
+    const [roomID, lobby] = [...lobbies.entries()].find(([key, value]) => value.players.includes(playerID));
+
+    if (lobby.players.indexOf(playerID) === lobby.game.player) {
+      const win = lobby.game.update(x);
+      if (win) io.to(roomID).emit("win", win);
+      else io.to(roomID).emit("update", lobby.game.grid, lobby.game.player);
     }
   });
 });
