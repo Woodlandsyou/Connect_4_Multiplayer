@@ -58,7 +58,7 @@ class Game {
   update(x) {
     this.grid[x].push(this.player)
     const count = this.checkForWin(x);
-    if (count >= 4) { return this.player ? "Red" : "Yellow"; }
+    if (count >= 4) { return this.player }
     this.player = this.player ? 0 : 1;
     return undefined;
   }

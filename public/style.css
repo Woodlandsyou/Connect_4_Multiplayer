@@ -10,7 +10,7 @@ body{
 }
 
 #currentPlayer {
-    display: none;
+    /* display: none; */
 }
 
 h1 {

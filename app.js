@@ -85,8 +85,7 @@ io.on("connection", socket => {
 
     if (lobby.players.indexOf(playerID) === lobby.game.player) {
       const win = lobby.game.update(x);
-      if (win) io.to(roomID).emit("win", win);
-      else io.to(roomID).emit("update", lobby.game.grid, lobby.game.player);
+      io.to(roomID).emit("update", lobby.game.grid, lobby.game.player, win);
     }
   });
 });
