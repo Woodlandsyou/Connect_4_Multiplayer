@@ -1,65 +1,65 @@
-(() => {
-    const game = async p => {
+(async () => {
+  const socket = io("http://localhost:8080");
+  const roomID = window.location.pathname.split("/").at(-1);
 
-        const socket = io("http://localhost:8080");
-    
-        const cols = 7, rows = cols - 1;
-        const _width = 700, _height = 600;
-        const s = _width / cols;
-        let grid = (() => {
-            let a = [];
-            for (let i = 0; i < cols; i++) a.push([]);
-            return a;
-        })();
-        let current = false, canvas;
-    
-        p.setup = () => {
-            canvas = p.createCanvas(_width, _height).canvas;
-            canvas.addEventListener("click", e => {
-                const x = Math.floor(p.mouseX / s);
-                socket.emit("turn", x);
-            });
-        }
-    
-        p.draw = () => {
-            p.background(0);
-            drawLines();
-            displayPlates();
-        }
-    
-        function drawLines() {
-            p.push();
-            p.stroke(255);
-            for (let i = 0; i < grid.length; i++) {
-                p.line(i * s, 0, i * s, _height);
-                p.line(0, i * s, _width, i * s);
-            }
-            p.line(_width, 0, _width, _height);
-            p.pop();
-        }
-    
-        function displayPlates() {
-            for (let i = 0; i < grid.length; i++) {
-                for (let j = 0; j < grid[i].length; j++) {
-                    p.push();
-                    if(grid[i][j]) p.fill(255,240,0);
-                    else p.fill(155, 0, 0);
-                    p.circle(i * s + s / 2, _height - j * s - s / 2, s);
-                    p.pop();
-                }
-                
-            }
-        }
-        
-        await socket.on("answer", data => {
-            const { x, player } = data;
-            if(typeof x !== "number" && typeof player !== "boolean") throw new Error(`Invalid Server Response: ${data}`);
-            if(player !== current) throw new Error(`Game is out of Sync\nplayer-Side: ${current}\nServer_Side: ${player}`);
-            
-            grid[x].push(player);
-            current = !player;
-        });
-        
+  const res = await fetch(`/api/board/${roomID}`, {
+    method: "GET", headers: {
+      Authorization: `Bearer ${sessionStorage.getItem("playerID")}`
     }
-    const p5I = new p5(game);
+  });
+  if (res.status === 401) throw new Error("Autherization failed");
+  let { grid, current } = await res.json(), canvas;
+  const playerID = sessionStorage.getItem("playerID"), _width = 700, _height = 600, s = _width / grid.length;
+  socket.emit("join-Room", roomID, playerID);
+
+  const game = p => {
+
+    p.setup = () => {
+      canvas = p.createCanvas(_width, _height).canvas;
+      canvas.addEventListener("click", e => {
+        const x = Math.floor(p.mouseX / s);
+        socket.emit("turn", playerID, x);
+      });
+    }
+
+    p.draw = () => {
+      p.background(0);
+      drawLines();
+      displayPlates();
+    }
+
+    function drawLines() {
+      p.push();
+      p.stroke(255);
+      for (let i = 0; i < grid.length; i++) {
+        p.line(i * s, 0, i * s, _height);
+        p.line(0, i * s, _width, i * s);
+      }
+      p.line(_width, 0, _width, _height);
+      p.pop();
+    }
+
+    function displayPlates() {
+      for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[i].length; j++) {
+          p.push();
+          if (grid[i][j]) p.fill(255, 240, 0);
+          else p.fill(155, 0, 0);
+          p.circle(i * s + s / 2, _height - j * s - s / 2, s);
+          p.pop();
+        }
+      }
+    }
+    socket.on("update", (board, player) => {
+      grid = board;
+      current = player;
+    });
+
+    socket.on("win", player => {
+      setTimeout(() => {
+        alert(`Player ${player} has won`);
+      }, 1000);
+    });
+  }
+  new p5(game);
 })();

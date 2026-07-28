@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect 4 — Multiplayer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #020b1d;
+      --panel: rgba(7, 24, 53, 0.72);
+      --border: rgba(48, 116, 218, 0.55);
+      --text: #f5f7fb;
+      --muted: #9eafd0;
+      --blue: #1769ff;
+      --green: #18b968;
+      --yellow: #ffd21c;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 50% 30%, #09265a 0%, transparent 35%),
+        radial-gradient(circle at 80% 60%, #071d44 0%, transparent 30%),
+        linear-gradient(135deg, #020917, #031432 55%, #010817);
+      overflow-x: hidden;
+    }
+
+    /* ---------- NAVBAR ---------- */
+
+    nav {
+      height: 90px;
+      padding: 0 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 27px;
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+
+    .brand-logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      padding: 7px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      background: linear-gradient(145deg, #1265d9, #07317c);
+      border: 1px solid #2876e8;
+      box-shadow: 0 8px 25px rgba(0, 78, 200, 0.25);
+    }
+
+    .brand-logo span {
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: inset 0 1px 3px rgba(255,255,255,.4);
+    }
+
+    .brand-logo span:nth-child(2),
+    .brand-logo span:nth-child(4),
+    .brand-logo span:nth-child(8) {
+      background: #ef2929;
+    }
+
+    .brand-logo span:nth-child(5),
+    .brand-logo span:nth-child(9) {
+      background: #ffd21c;
+    }
+
+    .brand-text span {
+      color: var(--yellow);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+      color: #d8e2f5;
+    }
+
+    .how-to {
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .how-to:hover {
+      color: white;
+    }
+
+    .sign-in {
+      padding: 12px 23px;
+      border: 1px solid #20549b;
+      border-radius: 10px;
+      background: rgba(7, 22, 48, .6);
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    /* ---------- HERO ---------- */
+
+    .hero {
+      text-align: center;
+      padding-top: 65px;
+    }
+
+    .hero h1 {
+      font-size: clamp(65px, 8vw, 120px);
+      line-height: .9;
+      font-weight: 900;
+      letter-spacing: -6px;
+      text-shadow: 0 15px 50px rgba(0,0,0,.35);
+    }
+
+    .hero h1 span {
+      color: var(--yellow);
+    }
+
+    .subtitle {
+      margin-top: 25px;
+      color: #aebddd;
+      font-size: 23px;
+      line-height: 1.5;
+    }
+
+    /* ---------- GAME BOARD DECORATION ---------- */
+
+    .board-decoration {
+      position: fixed;
+      left: -85px;
+      bottom: -80px;
+      width: 350px;
+      height: 500px;
+      padding: 35px;
+      border-radius: 30px;
+      transform: rotate(-5deg);
+      background: linear-gradient(145deg, #0864d9, #043b94);
+      border: 4px solid #0d72ee;
+      box-shadow: 0 30px 80px rgba(0,0,0,.5);
+      opacity: .9;
+      z-index: -1;
+    }
+
+    .holes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .hole {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: #021d50;
+      border: 3px solid #0751b5;
+      box-shadow: inset 0 5px 10px rgba(0,0,0,.5);
+    }
+
+    .hole.red {
+      background: #ed2424;
+    }
+
+    .hole.yellow {
+      background: #ffd21c;
+    }
+
+    /* ---------- MAIN ---------- */
+
+    .main {
+      width: min(820px, calc(100% - 40px));
+      margin: 45px auto 0;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 34px;
+    }
+
+    .card {
+      min-height: 380px;
+      padding: 34px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: linear-gradient(
+        145deg,
+        rgba(9, 32, 70, .78),
+        rgba(3, 18, 43, .72)
+      );
+      box-shadow:
+        0 25px 70px rgba(0,0,0,.25),
+        inset 0 1px rgba(255,255,255,.04);
+      backdrop-filter: blur(14px);
+      transition: transform .25s, border-color .25s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(74, 145, 255, .8);
+    }
+
+    .icon {
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 47px;
+      margin-bottom: 25px;
+      border: 1px solid #1260c5;
+      background: rgba(3, 25, 60, .8);
+    }
+
+    .icon.green {
+      border-color: #16a960;
+      color: #29df82;
+    }
+
+    .icon.blue {
+      color: #2381ff;
+    }
+
+    .card h2 {
+      font-size: 27px;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.6;
+      max-width: 280px;
+      margin-bottom: 28px;
+    }
+
+    button {
+      border: none;
+      font: inherit;
+    }
+
+    .primary-btn {
+      width: 100%;
+      padding: 15px 20px;
+      border-radius: 9px;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #1768ff, #114fd1);
+      box-shadow: 0 10px 25px rgba(0, 85, 255, .25);
+      transition: .2s;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .green-btn {
+      background: linear-gradient(135deg, #1ac26a, #119b54);
+      box-shadow: 0 10px 25px rgba(0, 190, 90, .18);
+    }
+
+    /* ---------- CODE JOIN ---------- */
+
+    .code-box {
+      margin-top: 30px;
+      min-height: 95px;
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(6, 27, 58, .65);
+      backdrop-filter: blur(14px);
+    }
+
+    .code-title {
+      white-space: nowrap;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .code-input {
+      flex: 1;
+      min-width: 0;
+      padding: 15px 18px;
+      border-radius: 9px;
+      border: 1px solid #27568d;
+      background: rgba(2, 14, 34, .8);
+      color: white;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .code-input:focus {
+      border-color: #3180ff;
+      box-shadow: 0 0 0 3px rgba(49,128,255,.1);
+    }
+
+    .join-btn {
+      padding: 15px 30px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #4240db, #3934bd);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ---------- FOOTER ---------- */
+
+    footer {
+      padding: 30px 0 50px;
+      text-align: center;
+      color: #7088b4;
+      font-size: 15px;
+      letter-spacing: 1px;
+    }
+
+    /* ---------- TOAST ---------- */
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translate(-50%, 100px);
+      padding: 14px 22px;
+      border-radius: 10px;
+      background: #102a52;
+      border: 1px solid #315b93;
+      color: white;
+      opacity: 0;
+      transition: .3s;
+      z-index: 10;
+    }
+
+    .toast.show {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+
+    @media (max-width: 750px) {
+      nav {
+        padding: 0 20px;
+      }
+
+      .brand {
+        font-size: 20px;
+      }
+
+      .brand-logo {
+        width: 40px;
+        height: 40px;
+      }
+
+      .how-to {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 35px;
+      }
+
+      .hero h1 {
+        letter-spacing: -3px;
+      }
+
+      .subtitle {
+        font-size: 17px;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        min-height: 320px;
+      }
+
+      .code-box {
+        flex-wrap: wrap;
+      }
+
+      .code-title {
+        width: 100%;
+      }
+
+      .code-input {
+        width: 100%;
+        flex-basis: 65%;
+      }
+
+      .join-btn {
+        flex: 1;
+      }
+
+      .board-decoration {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVIGATION -->
+  <nav>
+    <div class="brand">
+      <div class="brand-logo">
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+        <span></span><span></span><span></span>
+      </div>
+
+      <div class="brand-text">
+        CONNECT <span>4</span>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <div class="how-to">
+        ? &nbsp; How to Play
+      </div>
+
+      <button class="sign-in">
+        ♙ &nbsp; Sign In
+      </button>
+    </div>
+  </nav>
+
+  <!-- DECORATIVE BOARD -->
+  <div class="board-decoration">
+    <div class="holes">
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole yellow"></div>
+      <div class="hole"></div>
+
+      <div class="hole"></div>
+      <div class="hole red"></div>
+      <div class="hole yellow"></div>
+      <div class="hole"></div>
+
+      <div class="hole red"></div>
+      <div class="hole yellow"></div>
+      <div class="hole red"></div>
+      <div class="hole"></div>
+
+      <div class="hole red"></div>
+      <div class="hole yellow"></div>
+      <div class="hole red"></div>
+      <div class="hole"></div>
+
+      <div class="hole yellow"></div>
+      <div class="hole red"></div>
+      <div class="hole"></div>
+      <div class="hole yellow"></div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>CONNECT <span>4</span></h1>
+
+    <p class="subtitle">
+      Classic game. Real competition.<br>
+      Play online with friends.
+    </p>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <section class="actions">
+
+      <!-- CREATE -->
+      <div class="card">
+        <div class="icon blue">♟</div>
+
+        <h2>Create Lobby</h2>
+
+        <p>
+          Create a new lobby and invite your friends.
+        </p>
+
+        <button
+          class="primary-btn"
+          onclick="createLobby()"
+        >
+          ＋ &nbsp; Create New Lobby
+        </button>
+      </div>
+
+      <!-- JOIN -->
+      <div class="card">
+        <div class="icon green">↪</div>
+
+        <h2>Join Lobby</h2>
+
+        <p>
+          Join an existing lobby using a lobby code.
+        </p>
+
+        <button class="primary-btn green-btn">
+          ↪ &nbsp; Join Lobby
+        </button>
+      </div>
+
+    </section>
+
+    <!-- JOIN BY CODE -->
+    <section class="code-box">
+
+      <div class="code-title">
+        # &nbsp; Join with Code
+      </div>
+
+      <input
+        id="lobbyCode"
+        class="code-input"
+        type="text"
+        maxlength="6"
+        placeholder="Enter lobby code..."
+        autocomplete="off"
+      />
+
+      <button class="join-btn" onclick=joinLobby()>Join</button>
+    </section>
+
+  </main>
+
+  <footer>
+    ───────── &nbsp; ♛ &nbsp; PLAY. CONNECT. WIN. &nbsp; ─────────
+  </footer>
+  <script src="/home.js"></script>
+</body>
+</html>

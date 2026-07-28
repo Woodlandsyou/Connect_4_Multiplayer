@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<title>Connect 4 — Waiting Room</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #020b1d;
+  --panel: rgba(7,24,53,.72);
+  --border: rgba(48,116,218,.55);
+  --text:#f5f7fb;
+  --muted:#9eafd0;
+  --yellow:#ffd21c;
+  --blue:#1769ff;
+  --green:#18b968;
+}
+
+body {
+  min-height:100vh;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:white;
+  background:
+    radial-gradient(circle at 50% 30%, #09265a 0%, transparent 35%),
+    radial-gradient(circle at 80% 60%, #071d44 0%, transparent 30%),
+    linear-gradient(135deg,#020917,#031432 55%,#010817);
+}
+
+
+/* NAVBAR */
+
+nav {
+  height:90px;
+  padding:0 38px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-size:27px;
+  font-weight:800;
+}
+
+.brand-logo {
+  width:50px;
+  height:50px;
+  border-radius:12px;
+  padding:7px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:4px;
+  background:linear-gradient(145deg,#1265d9,#07317c);
+  border:1px solid #2876e8;
+}
+
+.brand-logo span {
+  background:#ffd21c;
+  border-radius:50%;
+}
+
+.brand-logo span:nth-child(2),
+.brand-logo span:nth-child(4),
+.brand-logo span:nth-child(8) {
+  background:#ef2929;
+}
+
+.brand-text span {
+  color:var(--yellow);
+}
+
+.nav-right {
+  color:#d8e2f5;
+}
+
+
+/* BOARD */
+
+.board-decoration {
+  position:fixed;
+  left:-85px;
+  bottom:-80px;
+  width:350px;
+  height:500px;
+  padding:35px;
+  border-radius:30px;
+  transform:rotate(-5deg);
+  background:linear-gradient(145deg,#0864d9,#043b94);
+  border:4px solid #0d72ee;
+  opacity:.9;
+  z-index:-1;
+}
+
+.holes {
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+}
+
+.hole {
+ aspect-ratio:1;
+ border-radius:50%;
+ background:#021d50;
+ border:3px solid #0751b5;
+}
+
+.hole.red {
+ background:#ed2424;
+}
+
+.hole.yellow {
+ background:#ffd21c;
+}
+
+
+/* MAIN */
+
+.hero {
+ text-align:center;
+ padding-top:65px;
+}
+
+.hero h1 {
+ font-size:clamp(55px,8vw,100px);
+ font-weight:900;
+ letter-spacing:-5px;
+}
+
+.hero h1 span {
+ color:var(--yellow);
+}
+
+.subtitle {
+ margin-top:20px;
+ color:#aebddd;
+ font-size:22px;
+}
+
+
+.waiting-card {
+
+ width:min(600px,calc(100% - 40px));
+ margin:55px auto;
+
+ padding:45px;
+
+ border-radius:22px;
+
+ background:
+ linear-gradient(
+  145deg,
+  rgba(9,32,70,.78),
+  rgba(3,18,43,.72)
+ );
+
+ border:1px solid var(--border);
+
+ box-shadow:
+ 0 25px 70px rgba(0,0,0,.35),
+ inset 0 1px rgba(255,255,255,.05);
+
+ backdrop-filter:blur(14px);
+
+ text-align:center;
+}
+
+
+/* LOADING ICON */
+
+.loader {
+
+ width:120px;
+ height:120px;
+ margin:auto;
+ border-radius:50%;
+
+ border:6px solid rgba(255,255,255,.1);
+ border-top-color:#1769ff;
+
+ animation:spin 1s linear infinite;
+
+ display:flex;
+ align-items:center;
+ justify-content:center;
+
+ font-size:45px;
+}
+
+@keyframes spin {
+ to {
+  transform:rotate(360deg);
+ }
+}
+
+
+.waiting-card h2 {
+
+ margin-top:30px;
+
+ font-size:32px;
+
+}
+
+
+.waiting-card p {
+
+ margin:15px auto 30px;
+
+ max-width:400px;
+
+ color:var(--muted);
+
+ font-size:17px;
+
+ line-height:1.6;
+
+}
+
+
+.code {
+  cursor: pointer;
+  transition: .2s;
+ display:inline-block;
+
+ padding:15px 35px;
+
+ border-radius:12px;
+
+ background:rgba(2,14,34,.8);
+
+ border:1px solid #27568d;
+
+ font-size:30px;
+
+ font-weight:800;
+
+ letter-spacing:8px;
+
+ color:var(--yellow);
+
+ margin-bottom:30px;
+
+}
+.code:hover {
+  border-color: #3180ff;
+  transform: translateY(-2px);
+}
+
+.copy-message {
+  margin-top: 12px;
+  color: #29df82;
+  font-size: 14px;
+  opacity: 0;
+  transition: .25s;
+}
+
+.copy-message.show {
+  opacity: 1;
+}
+.primary-btn {
+
+ width:100%;
+
+ padding:15px;
+
+ border-radius:9px;
+
+ border:none;
+
+ color:white;
+
+ font-weight:700;
+
+ font-size:16px;
+
+ cursor:pointer;
+
+ background:linear-gradient(135deg,#1768ff,#114fd1);
+
+}
+
+
+.primary-btn:hover {
+ filter:brightness(1.15);
+ transform:translateY(-2px);
+}
+
+
+/* FOOTER */
+
+footer {
+
+ margin-top:80px;
+
+ text-align:center;
+
+ color:#7088b4;
+
+ letter-spacing:1px;
+
+}
+
+
+@media(max-width:700px){
+
+ nav {
+  padding:0 20px;
+ }
+
+ .hero h1 {
+  letter-spacing:-3px;
+ }
+
+ .board-decoration {
+  display:none;
+ }
+
+ .waiting-card {
+  padding:30px 20px;
+ }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<nav>
+
+<div class="brand">
+
+<div class="brand-logo">
+<span></span><span></span><span></span>
+<span></span><span></span><span></span>
+<span></span><span></span><span></span>
+</div>
+
+<div class="brand-text">
+CONNECT <span>4</span>
+</div>
+
+</div>
+
+
+<div class="nav-right">
+? &nbsp; How to Play
+</div>
+
+
+</nav>
+
+
+
+<div class="board-decoration">
+
+<div class="holes">
+
+<div class="hole"></div>
+<div class="hole"></div>
+<div class="hole yellow"></div>
+<div class="hole"></div>
+
+<div class="hole"></div>
+<div class="hole red"></div>
+<div class="hole yellow"></div>
+<div class="hole"></div>
+
+<div class="hole red"></div>
+<div class="hole yellow"></div>
+<div class="hole red"></div>
+<div class="hole"></div>
+
+<div class="hole red"></div>
+<div class="hole yellow"></div>
+<div class="hole red"></div>
+<div class="hole"></div>
+
+</div>
+
+</div>
+
+
+
+
+<section class="hero">
+
+<h1>
+WAITING <span>ROOM</span>
+</h1>
+
+<p class="subtitle">
+Your lobby is ready.<br>
+Waiting for another player to join.
+</p>
+
+</section>
+
+
+
+<main>
+
+
+<div class="waiting-card">
+
+
+<div class="loader">
+●
+</div>
+
+
+<h2>
+Waiting for Opponent
+</h2>
+
+
+<p>
+Share your lobby code with a friend.
+The game will start automatically once they join.
+</p>
+
+<div class="code" onclick="copyCode()" id="lobbyCode"></div>
+
+<div class="copy-message" id="copyMessage">
+  ✓ Lobby code copied
+</div>
+
+<button class="primary-btn">
+↻ &nbsp; Cancel Lobby
+</button>
+
+
+
+</div>
+
+
+</main>
+
+
+
+
+<footer>
+
+───────── &nbsp; ♛ &nbsp; PLAY. CONNECT. WIN. &nbsp; ─────────
+
+</footer>
+
+<script src="/waiting.js"></script>
+</body>
+</html>
