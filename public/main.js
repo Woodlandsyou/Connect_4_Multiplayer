@@ -43,22 +43,22 @@
       for (let i = 0; i < grid.length; i++) {
         for (let j = 0; j < grid[i].length; j++) {
           p.push();
-          if (grid[i][j]) p.fill(255, 240, 0);
-          else p.fill(155, 0, 0);
+          if (grid[i][j]) p.fill(255, 240, 0); //Yellow
+          else p.fill(155, 0, 0); // Red
           p.circle(i * s + s / 2, _height - j * s - s / 2, s);
           p.pop();
         }
       }
     }
-    socket.on("update", (board, player) => {
+    socket.on("update", (board, player, win) => {
       grid = board;
       current = player;
-    });
-
-    socket.on("win", player => {
-      setTimeout(() => {
-        alert(`Player ${player} has won`);
-      }, 1000);
+      document.getElementById("currentPlayer").innerText = (current ? "Yellow" : "Red");
+      if (typeof win === "number") {
+        setTimeout(() => {
+          alert(`Player ${player ? "Yellow" : "Red"} has won`);
+        }, 1000);
+      }
     });
   }
   new p5(game);
